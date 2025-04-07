@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type UserRole = 'parent' | 'kid' | null;
+type ThemeMode = 'light' | 'dark';
 
 interface User {
   id: string;
@@ -18,6 +19,8 @@ interface UserContextType {
   login: (email: string, password: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
   userRole: UserRole;
+  themeMode: ThemeMode;
+  toggleTheme: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -44,6 +47,21 @@ const MOCK_USERS = [
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    // Check if theme is stored in localStorage
+    const savedTheme = localStorage.getItem('shravanTheme');
+    return (savedTheme as ThemeMode) || 'light';
+  });
+  
+  // Apply theme class to document
+  useEffect(() => {
+    if (themeMode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('shravanTheme', themeMode);
+  }, [themeMode]);
   
   // Check for existing session on load
   useEffect(() => {
@@ -57,6 +75,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
     // In a real app, validate credentials against a backend
+    if (!email || !password) return false;
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     // Here we're just simulating with our mock data
     const foundUser = MOCK_USERS.find(u => u.email === email && u.role === role);
     
@@ -74,6 +97,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserRole(null);
     localStorage.removeItem('shravanUser');
   };
+  
+  const toggleTheme = () => {
+    setThemeMode(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   return (
     <UserContext.Provider
@@ -82,7 +109,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         login,
         logout,
-        userRole
+        userRole,
+        themeMode,
+        toggleTheme
       }}
     >
       {children}

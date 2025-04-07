@@ -39,6 +39,36 @@
 
     --radius: 1rem;
   }
+
+  .dark {
+    --background: 200 50% 5%;
+    --foreground: 200 10% 98%;
+
+    --card: 200 25% 10%;
+    --card-foreground: 200 10% 98%;
+
+    --popover: 200 45% 5%;
+    --popover-foreground: 200 10% 98%;
+
+    --primary: 142 45% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 20 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 200 30% 15%;
+    --muted-foreground: 200 20% 70%;
+
+    --accent: 250 30% 25%;
+    --accent-foreground: 250 40% 90%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 30% 20%;
+    --input: 200 30% 20%;
+    --ring: 222.2 84% 50%;
+  }
 }
 
 @layer base {
@@ -57,15 +87,15 @@
   }
 
   .btn-primary {
-    @apply bg-shravan-mint text-primary-foreground hover:bg-shravan-darkMint;
+    @apply bg-shravan-mint text-primary-foreground hover:bg-shravan-darkMint dark:bg-shravan-darkMint dark:hover:bg-shravan-mint;
   }
 
   .btn-secondary {
-    @apply bg-shravan-peach text-secondary-foreground hover:bg-shravan-darkPeach;
+    @apply bg-shravan-peach text-secondary-foreground hover:bg-shravan-darkPeach dark:bg-shravan-darkPeach dark:hover:bg-shravan-peach;
   }
 
   .btn-accent {
-    @apply bg-shravan-lavender text-accent-foreground hover:bg-shravan-lavender/90;
+    @apply bg-shravan-lavender text-accent-foreground hover:bg-shravan-lavender/90 dark:bg-shravan-darkLavender dark:hover:bg-shravan-lavender;
   }
 
   .card-shravan {
@@ -74,5 +104,17 @@
 
   .input-shravan {
     @apply rounded-xl border border-input bg-transparent px-4 py-3 text-lg shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+  }
+  
+  .glass-morphism {
+    @apply backdrop-blur-xl bg-white/20 dark:bg-black/30 border border-white/20 dark:border-white/10;
+  }
+  
+  .page-gradient-light {
+    @apply bg-gradient-to-br from-shravan-mint/20 via-white to-shravan-peach/20;
+  }
+  
+  .page-gradient-dark {
+    @apply bg-gradient-to-br from-shravan-darkMint/10 via-background to-shravan-darkPeach/10;
   }
 }

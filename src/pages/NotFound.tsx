@@ -1,13 +1,20 @@
 
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from '@/components/ThemeToggle';
+import { useUser } from '@/context/UserContext';
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const { themeMode } = useUser();
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-shravan-mint/20 via-white to-shravan-lavender/20 p-4">
-      <div className="w-24 h-24 rounded-full bg-shravan-mint flex items-center justify-center mb-6 animate-float">
+    <div className={`min-h-screen flex flex-col items-center justify-center ${themeMode === 'light' ? 'page-gradient-light' : 'page-gradient-dark'} p-4`}>
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
+      <div className="w-24 h-24 rounded-full bg-shravan-mint dark:bg-shravan-darkMint flex items-center justify-center mb-6 animate-float">
         <span className="text-4xl">🔍</span>
       </div>
       

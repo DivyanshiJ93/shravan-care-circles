@@ -60,7 +60,8 @@ export default {
 					lavender: '#E2D1F9',
 					darkMint: '#8ECDA0',
 					darkPeach: '#FFBDA0',
-					darkBlue: '#9EC1DE'
+					darkBlue: '#9EC1DE',
+					darkLavender: '#C2A4E8'
 				}
 			},
 			borderRadius: {
@@ -91,6 +92,14 @@ export default {
 					'75%': { transform: 'rotate(-10deg)' },
 					'100%': { transform: 'rotate(0deg)' },
 				},
+				bounce: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-20px)' },
+				},
+				wiggle: {
+					'0%, 100%': { transform: 'rotate(-3deg)' },
+					'50%': { transform: 'rotate(3deg)' },
+				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -98,6 +107,8 @@ export default {
 				'float': 'float 6s ease-in-out infinite',
 				'pulse': 'pulse 2s ease-in-out infinite',
 				'wave': 'wave 2s ease-in-out infinite',
+				'bounce': 'bounce 1s ease-in-out infinite',
+				'wiggle': 'wiggle 1s ease-in-out infinite',
 			},
 			fontFamily: {
 				'rounded': ['var(--font-rounded)', 'system-ui', 'sans-serif'],

@@ -1,21 +1,40 @@
 
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@/context/UserContext';
+import { Moon, Sun } from 'lucide-react';
+import ShravanBot from '@/components/ShravanBot';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { themeMode, toggleTheme } = useUser();
   
   return (
     <div className="min-h-screen overflow-x-hidden">
+      {/* Theme Toggle */}
+      <div className="fixed top-4 right-4 z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="rounded-full h-10 w-10 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
+          aria-label="Toggle theme"
+        >
+          {themeMode === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        </Button>
+      </div>
+      
       {/* Hero Section */}
       <section className="relative">
         <div 
-          className="absolute inset-0 bg-gradient-to-br from-shravan-mint/30 via-shravan-blue/20 to-shravan-lavender/30 -z-10"
+          className={`absolute inset-0 ${themeMode === 'light' 
+            ? 'bg-gradient-to-br from-shravan-mint/30 via-shravan-blue/20 to-shravan-lavender/30' 
+            : 'bg-gradient-to-br from-shravan-darkMint/10 via-shravan-darkBlue/10 to-shravan-darkLavender/10'} -z-10`}
           aria-hidden="true"
         />
         
         <div className="container px-4 md:px-6 py-16 md:py-24 flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full bg-shravan-mint flex items-center justify-center mb-6 animate-float">
+          <div className="w-24 h-24 rounded-full bg-shravan-mint dark:bg-shravan-darkMint flex items-center justify-center mb-6 animate-float">
             <span className="text-4xl">👵🏼</span>
           </div>
           
@@ -48,7 +67,7 @@ export default function LandingPage() {
       </section>
       
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section className="py-16 md:py-24 bg-muted/30 dark:bg-muted/10">
         <div className="container px-4 md:px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             How SHRAVAN Helps Your Family
@@ -56,8 +75,8 @@ export default function LandingPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature Card 1 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-mint/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-mint flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-mint/20 dark:from-card dark:to-shravan-darkMint/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-mint dark:bg-shravan-darkMint flex items-center justify-center mb-4">
                 <span className="text-2xl">❤️</span>
               </div>
               <h3 className="text-xl font-bold mb-2">Vitals Tracking</h3>
@@ -67,8 +86,8 @@ export default function LandingPage() {
             </div>
             
             {/* Feature Card 2 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-blue/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-blue flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-blue/20 dark:from-card dark:to-shravan-darkBlue/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-blue dark:bg-shravan-darkBlue flex items-center justify-center mb-4">
                 <span className="text-2xl">🤖</span>
               </div>
               <h3 className="text-xl font-bold mb-2">SHRAVAN Assistant</h3>
@@ -78,19 +97,19 @@ export default function LandingPage() {
             </div>
             
             {/* Feature Card 3 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-peach/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-peach flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-peach/20 dark:from-card dark:to-shravan-darkPeach/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-peach dark:bg-shravan-darkPeach flex items-center justify-center mb-4">
                 <span className="text-2xl">🏃‍♀️</span>
               </div>
               <h3 className="text-xl font-bold mb-2">Physio Assistant</h3>
               <p className="text-muted-foreground">
-                Guided exercises with real-time feedback to keep mobility and strength at their best.
+                Guided exercises with real-time feedback to help correct posture.
               </p>
             </div>
             
             {/* Feature Card 4 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-lavender/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-lavender flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-lavender/20 dark:from-card dark:to-shravan-darkLavender/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-lavender dark:bg-shravan-darkLavender flex items-center justify-center mb-4">
                 <span className="text-2xl">👨‍👩‍👧‍👦</span>
               </div>
               <h3 className="text-xl font-bold mb-2">Community Support</h3>
@@ -100,8 +119,8 @@ export default function LandingPage() {
             </div>
             
             {/* Feature Card 5 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-mint/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-mint flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-mint/20 dark:from-card dark:to-shravan-darkMint/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-mint dark:bg-shravan-darkMint flex items-center justify-center mb-4">
                 <span className="text-2xl">🔔</span>
               </div>
               <h3 className="text-xl font-bold mb-2">Smart Alerts</h3>
@@ -111,8 +130,8 @@ export default function LandingPage() {
             </div>
             
             {/* Feature Card 6 */}
-            <div className="card-shravan bg-gradient-to-br from-white to-shravan-blue/20">
-              <div className="w-16 h-16 rounded-full bg-shravan-blue flex items-center justify-center mb-4">
+            <div className="card-shravan bg-gradient-to-br from-white to-shravan-blue/20 dark:from-card dark:to-shravan-darkBlue/10">
+              <div className="w-16 h-16 rounded-full bg-shravan-blue dark:bg-shravan-darkBlue flex items-center justify-center mb-4">
                 <span className="text-2xl">🔒</span>
               </div>
               <h3 className="text-xl font-bold mb-2">Privacy First</h3>
@@ -127,7 +146,7 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-16 md:py-24">
         <div className="container px-4 md:px-6">
-          <div className="card-shravan max-w-3xl mx-auto bg-gradient-to-r from-shravan-mint/30 to-shravan-blue/30">
+          <div className="card-shravan max-w-3xl mx-auto bg-gradient-to-r from-shravan-mint/30 to-shravan-blue/30 dark:from-shravan-darkMint/10 dark:to-shravan-darkBlue/10">
             <div className="text-center">
               <h2 className="text-3xl font-bold mb-4">Ready to join the SHRAVAN family?</h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
@@ -153,12 +172,12 @@ export default function LandingPage() {
       </section>
       
       {/* Footer */}
-      <footer className="bg-muted/30 py-8">
+      <footer className="bg-muted/30 dark:bg-muted/10 py-8">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 rounded-full bg-shravan-mint flex items-center justify-center">
-                <span className="font-bold text-primary-foreground">S</span>
+              <div className="w-8 h-8 rounded-full bg-shravan-mint dark:bg-shravan-darkMint flex items-center justify-center">
+                <span className="font-bold text-primary-foreground dark:text-white">S</span>
               </div>
               <span className="font-bold text-lg">SHRAVAN</span>
             </div>
@@ -168,6 +187,9 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      
+      {/* Shravan Bot */}
+      <ShravanBot />
     </div>
   );
 }

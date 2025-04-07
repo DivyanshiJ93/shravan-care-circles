@@ -1,289 +1,356 @@
 
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useUser } from '@/context/UserContext';
-import Header from '@/components/Header';
-import ShravanBot from '@/components/ShravanBot';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Heart, Activity, Brain, Weight, Thermometer, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import VitalCard from '@/components/VitalCard';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  TooltipProps
+} from 'recharts';
+import { useUser } from '@/context/UserContext';
+import { AreaChart, Area } from 'recharts';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import ShravanBot from '@/components/ShravanBot';
 
-// Mock data
-const initialVitals = {
-  heartRate: {
-    value: 72,
-    unit: 'bpm',
-    normalRange: { min: 60, max: 100 },
-    history: [
-      { date: 'Apr 6, 2025', value: 75 },
-      { date: 'Apr 5, 2025', value: 72 },
-      { date: 'Apr 4, 2025', value: 78 },
-      { date: 'Apr 3, 2025', value: 74 },
-      { date: 'Apr 2, 2025', value: 76 },
-    ]
-  },
-  bloodPressure: {
-    value: 138,
-    unit: 'mmHg',
-    normalRange: { min: 90, max: 130 },
-    history: [
-      { date: 'Apr 6, 2025', value: 142 },
-      { date: 'Apr 5, 2025', value: 138 },
-      { date: 'Apr 4, 2025', value: 135 },
-      { date: 'Apr 3, 2025', value: 140 },
-      { date: 'Apr 2, 2025', value: 137 },
-    ]
-  },
-  bloodSugar: {
-    value: 110,
-    unit: 'mg/dL',
-    normalRange: { min: 70, max: 140 },
-    history: [
-      { date: 'Apr 6, 2025', value: 115 },
-      { date: 'Apr 5, 2025', value: 110 },
-      { date: 'Apr 4, 2025', value: 108 },
-      { date: 'Apr 3, 2025', value: 112 },
-      { date: 'Apr 2, 2025', value: 109 },
-    ]
-  },
-  bodyTemperature: {
-    value: 98.6,
-    unit: '°F',
-    normalRange: { min: 97, max: 99 },
-    history: [
-      { date: 'Apr 6, 2025', value: 98.6 },
-      { date: 'Apr 5, 2025', value: 98.4 },
-      { date: 'Apr 4, 2025', value: 98.7 },
-      { date: 'Apr 3, 2025', value: 98.5 },
-      { date: 'Apr 2, 2025', value: 98.4 },
-    ]
-  },
-  weight: {
-    value: 165,
-    unit: 'lbs',
-    normalRange: { min: 150, max: 180 },
-    history: [
-      { date: 'Apr 6, 2025', value: 165 },
-      { date: 'Apr 5, 2025', value: 165.5 },
-      { date: 'Apr 4, 2025', value: 166 },
-      { date: 'Mar 28, 2025', value: 167 },
-      { date: 'Mar 21, 2025', value: 168 },
-    ]
-  }
-};
+// Vital data types
+interface VitalReading {
+  value: number;
+  unit: string;
+  normalRange: {
+    min: number;
+    max: number;
+  };
+  history: {
+    date: string;
+    value: number;
+  }[];
+}
+
+interface PatientVitals {
+  heartRate: VitalReading;
+  bloodPressure: VitalReading;
+  bloodSugar: VitalReading;
+  bodyTemperature: VitalReading;
+  weight: VitalReading;
+}
 
 export default function VitalsTracker() {
-  const { user, isAuthenticated, userRole } = useUser();
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const { userRole } = useUser();
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week');
+  const [showAnomalies, setShowAnomalies] = useState(true);
+  const [selectedMetric, setSelectedMetric] = useState<keyof PatientVitals>('heartRate');
   
-  const [vitals, setVitals] = useState(initialVitals);
-  const [timeRange, setTimeRange] = useState('week');
-  
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-  
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const handleUpdateVital = (vitalType: keyof typeof vitals, newValue: number) => {
-    // In a real app, you'd send this to an API
-    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    
-    setVitals(prev => {
-      const updatedVital = {
-        ...prev[vitalType],
-        value: newValue,
-        history: [
-          { date: today, value: newValue },
-          ...prev[vitalType].history
-        ]
-      };
-      
-      return {
-        ...prev,
-        [vitalType]: updatedVital
-      };
-    });
-    
-    // Check if the value is outside normal range and show alert
-    const isNormal = newValue >= vitals[vitalType].normalRange.min && 
-                    newValue <= vitals[vitalType].normalRange.max;
-    
-    if (!isNormal) {
-      toast({
-        title: "Vital Reading Alert",
-        description: `The ${vitalType} reading is outside the normal range.`,
-        variant: "destructive"
-      });
+  // Mock patient data
+  const patientData: PatientVitals = {
+    heartRate: {
+      value: 72,
+      unit: 'bpm',
+      normalRange: { min: 60, max: 100 },
+      history: [
+        { date: '2024-03-01', value: 72 },
+        { date: '2024-03-02', value: 75 },
+        { date: '2024-03-03', value: 70 },
+        { date: '2024-03-04', value: 68 },
+        { date: '2024-03-05', value: 71 },
+        { date: '2024-03-06', value: 73 },
+        { date: '2024-03-07', value: 105 }, // Anomaly
+        { date: '2024-03-08', value: 77 },
+        { date: '2024-03-09', value: 76 },
+        { date: '2024-03-10', value: 74 }
+      ]
+    },
+    bloodPressure: {
+      value: 120,
+      unit: 'mmHg',
+      normalRange: { min: 90, max: 140 },
+      history: [
+        { date: '2024-03-01', value: 120 },
+        { date: '2024-03-02', value: 118 },
+        { date: '2024-03-03', value: 122 },
+        { date: '2024-03-04', value: 119 },
+        { date: '2024-03-05', value: 121 },
+        { date: '2024-03-06', value: 145 }, // Anomaly
+        { date: '2024-03-07', value: 125 },
+        { date: '2024-03-08', value: 123 },
+        { date: '2024-03-09', value: 120 },
+        { date: '2024-03-10', value: 121 }
+      ]
+    },
+    bloodSugar: {
+      value: 85,
+      unit: 'mg/dL',
+      normalRange: { min: 70, max: 140 },
+      history: [
+        { date: '2024-03-01', value: 85 },
+        { date: '2024-03-02', value: 90 },
+        { date: '2024-03-03', value: 88 },
+        { date: '2024-03-04', value: 87 },
+        { date: '2024-03-05', value: 89 },
+        { date: '2024-03-06', value: 86 },
+        { date: '2024-03-07', value: 150 }, // Anomaly
+        { date: '2024-03-08', value: 92 },
+        { date: '2024-03-09', value: 88 },
+        { date: '2024-03-10', value: 87 }
+      ]
+    },
+    bodyTemperature: {
+      value: 37.2,
+      unit: '°C',
+      normalRange: { min: 36.1, max: 37.5 },
+      history: [
+        { date: '2024-03-01', value: 37.2 },
+        { date: '2024-03-02', value: 37.0 },
+        { date: '2024-03-03', value: 37.1 },
+        { date: '2024-03-04', value: 37.3 },
+        { date: '2024-03-05', value: 37.4 },
+        { date: '2024-03-06', value: 37.2 },
+        { date: '2024-03-07', value: 38.2 }, // Anomaly
+        { date: '2024-03-08', value: 37.3 },
+        { date: '2024-03-09', value: 37.1 },
+        { date: '2024-03-10', value: 37.0 }
+      ]
+    },
+    weight: {
+      value: 68.5,
+      unit: 'kg',
+      normalRange: { min: 55, max: 80 },
+      history: [
+        { date: '2024-03-01', value: 68.5 },
+        { date: '2024-03-02', value: 68.2 },
+        { date: '2024-03-03', value: 68.7 },
+        { date: '2024-03-04', value: 68.4 },
+        { date: '2024-03-05', value: 68.6 },
+        { date: '2024-03-06', value: 68.3 },
+        { date: '2024-03-07', value: 68.8 },
+        { date: '2024-03-08', value: 68.5 },
+        { date: '2024-03-09', value: 68.3 },
+        { date: '2024-03-10', value: 68.4 }
+      ]
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
+  // Get filtered data based on time range
+  const getFilteredData = () => {
+    const now = new Date();
+    let cutoffDate = new Date();
+    
+    if (timeRange === 'day') {
+      cutoffDate.setDate(now.getDate() - 1);
+    } else if (timeRange === 'week') {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else {
+      cutoffDate.setMonth(now.getMonth() - 1);
+    }
+    
+    return patientData[selectedMetric].history.filter(
+      item => new Date(item.date) >= cutoffDate
+    );
+  };
+
+  // Check if a value is anomalous
+  const isAnomaly = (value: number) => {
+    const { min, max } = patientData[selectedMetric].normalRange;
+    return value < min || value > max;
+  };
+
+  // Custom tooltip for chart
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value as number;
+      const isAnomalous = isAnomaly(value);
       
-      <main className="container px-4 md:px-6 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Vitals Tracker</h1>
-            <p className="text-muted-foreground">
-              {userRole === 'parent' ? 'Track and monitor your health vitals' : `Monitor ${initialVitals.name || 'parent'}'s vitals`}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Time Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Today</SelectItem>
-                <SelectItem value="week">Past Week</SelectItem>
-                <SelectItem value="month">Past Month</SelectItem>
-                <SelectItem value="year">Past Year</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {userRole === 'parent' && (
-              <Button className="btn-shravan btn-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Vital
-              </Button>
-            )}
-          </div>
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-md">
+          <p className="text-sm text-gray-500 dark:text-gray-400">{`Date: ${label}`}</p>
+          <p className={`text-sm font-bold ${isAnomalous ? 'text-destructive' : 'text-foreground'}`}>
+            {`${selectedMetric}: ${value} ${patientData[selectedMetric].unit}`}
+          </p>
+          {isAnomalous && (
+            <p className="text-xs text-destructive mt-1">Out of normal range</p>
+          )}
         </div>
-        
-        {/* Vitals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <VitalCard
-            title="Heart Rate"
-            value={vitals.heartRate.value}
-            unit={vitals.heartRate.unit}
-            normalRange={vitals.heartRate.normalRange}
-            icon={<Heart className="h-4 w-4 text-shravan-blue" />}
-            history={vitals.heartRate.history}
-            onUpdate={userRole === 'parent' ? (value) => handleUpdateVital('heartRate', value) : undefined}
-            editable={userRole === 'parent'}
+      );
+    }
+    return null;
+  };
+
+  const handleAddReading = () => {
+    toast({
+      title: "Feature coming soon",
+      description: "You'll be able to add new readings in a future update!",
+    });
+  };
+
+  const handleExportData = () => {
+    toast({
+      title: "Data Export",
+      description: "Your vitals data has been prepared for export.",
+    });
+  };
+
+  // Only fixing the bug related to property 'name'
+  const getMetricDisplayName = (metric: keyof PatientVitals): string => {
+    const displayNames: Record<keyof PatientVitals, string> = {
+      heartRate: 'Heart Rate',
+      bloodPressure: 'Blood Pressure',
+      bloodSugar: 'Blood Sugar',
+      bodyTemperature: 'Body Temperature',
+      weight: 'Weight'
+    };
+    return displayNames[metric];
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Vitals Tracker</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {Object.entries(patientData).map(([key, data]) => (
+          <VitalCard 
+            key={key}
+            title={getMetricDisplayName(key as keyof PatientVitals)}
+            value={data.value}
+            unit={data.unit}
+            status={data.value < data.normalRange.min || data.value > data.normalRange.max ? 'warning' : 'normal'}
+            onClick={() => setSelectedMetric(key as keyof PatientVitals)}
+            isSelected={selectedMetric === key}
           />
-          
-          <VitalCard
-            title="Blood Pressure"
-            value={vitals.bloodPressure.value}
-            unit={vitals.bloodPressure.unit}
-            normalRange={vitals.bloodPressure.normalRange}
-            icon={<Activity className="h-4 w-4 text-shravan-blue" />}
-            history={vitals.bloodPressure.history}
-            onUpdate={userRole === 'parent' ? (value) => handleUpdateVital('bloodPressure', value) : undefined}
-            editable={userRole === 'parent'}
-          />
-          
-          <VitalCard
-            title="Blood Sugar"
-            value={vitals.bloodSugar.value}
-            unit={vitals.bloodSugar.unit}
-            normalRange={vitals.bloodSugar.normalRange}
-            icon={<Brain className="h-4 w-4 text-shravan-blue" />}
-            history={vitals.bloodSugar.history}
-            onUpdate={userRole === 'parent' ? (value) => handleUpdateVital('bloodSugar', value) : undefined}
-            editable={userRole === 'parent'}
-          />
-          
-          <VitalCard
-            title="Body Temperature"
-            value={vitals.bodyTemperature.value}
-            unit={vitals.bodyTemperature.unit}
-            normalRange={vitals.bodyTemperature.normalRange}
-            icon={<Thermometer className="h-4 w-4 text-shravan-blue" />}
-            history={vitals.bodyTemperature.history}
-            onUpdate={userRole === 'parent' ? (value) => handleUpdateVital('bodyTemperature', value) : undefined}
-            editable={userRole === 'parent'}
-          />
-          
-          <VitalCard
-            title="Weight"
-            value={vitals.weight.value}
-            unit={vitals.weight.unit}
-            normalRange={vitals.weight.normalRange}
-            icon={<Weight className="h-4 w-4 text-shravan-blue" />}
-            history={vitals.weight.history}
-            onUpdate={userRole === 'parent' ? (value) => handleUpdateVital('weight', value) : undefined}
-            editable={userRole === 'parent'}
-          />
-        </div>
-        
-        {/* Health Insights */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Health Insights</CardTitle>
-            <CardDescription>
-              Analyzing your vital trends to provide personalized recommendations
-            </CardDescription>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <CardTitle>{getMetricDisplayName(selectedMetric)} History</CardTitle>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 items-start sm:items-center">
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="show-anomalies" className="text-sm">Show Anomalies</Label>
+                <Switch
+                  id="show-anomalies"
+                  checked={showAnomalies}
+                  onCheckedChange={setShowAnomalies}
+                />
+              </div>
+              <ToggleGroup type="single" value={timeRange} onValueChange={(value) => value && setTimeRange(value as 'day' | 'week' | 'month')}>
+                <ToggleGroupItem value="day">Day</ToggleGroupItem>
+                <ToggleGroupItem value="week">Week</ToggleGroupItem>
+                <ToggleGroupItem value="month">Month</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 border rounded-lg bg-shravan-mint/20">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-shravan-mint flex items-center justify-center flex-shrink-0">
-                    <Activity className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Blood Pressure Trending High</h3>
-                    <p className="text-muted-foreground">
-                      Your blood pressure readings have been slightly elevated over the past week.
-                      Consider reducing sodium intake and increasing physical activity.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-4 border rounded-lg bg-shravan-blue/20">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-shravan-blue flex items-center justify-center flex-shrink-0">
-                    <Heart className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Heart Rate Stability</h3>
-                    <p className="text-muted-foreground">
-                      Your heart rate has been stable within the normal range. Continue your current
-                      routine and consider adding light cardio exercises.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-4 border rounded-lg bg-shravan-peach/20">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-shravan-peach flex items-center justify-center flex-shrink-0">
-                    <Weight className="h-4 w-4 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Weight Improvement</h3>
-                    <p className="text-muted-foreground">
-                      You've lost 3 pounds over the last month! Keep up with your diet and exercise routine.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={getFilteredData()}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 10', 'dataMax + 10']} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8ECDA0"
+                    strokeWidth={2}
+                    dot={(props) => {
+                      const value = props.payload.value;
+                      const anomalous = isAnomaly(value);
+                      
+                      if (!showAnomalies && anomalous) {
+                        return null;
+                      }
+                      
+                      return (
+                        <circle
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={anomalous ? 6 : 4}
+                          fill={anomalous ? "#ff6b6b" : "#8ECDA0"}
+                          stroke="none"
+                        />
+                      );
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
-      </main>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Analysis</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Current Status</h3>
+              <div className={`p-4 rounded-lg ${
+                isAnomaly(patientData[selectedMetric].value) 
+                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+                  : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+              }`}>
+                <p className="text-sm">
+                  {isAnomaly(patientData[selectedMetric].value) 
+                    ? `Your ${getMetricDisplayName(selectedMetric).toLowerCase()} is outside the normal range.` 
+                    : `Your ${getMetricDisplayName(selectedMetric).toLowerCase()} is within normal range.`
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Recent Trends</h3>
+              <div className="h-[100px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={getFilteredData().slice(-5)}
+                    margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+                  >
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#8ECDA0" 
+                      fill="#8ECDA0" 
+                      fillOpacity={0.3} 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Actions</h3>
+              <button 
+                onClick={handleAddReading} 
+                className="w-full py-2 px-4 bg-shravan-mint text-primary-foreground hover:bg-shravan-darkMint dark:bg-shravan-darkMint dark:hover:bg-shravan-mint transition-colors rounded-lg text-sm"
+              >
+                Add New Reading
+              </button>
+              {userRole === 'kid' && (
+                <button 
+                  onClick={handleExportData} 
+                  className="w-full py-2 px-4 bg-shravan-blue text-primary-foreground hover:bg-shravan-darkBlue dark:bg-shravan-darkBlue dark:hover:bg-shravan-blue transition-colors rounded-lg text-sm"
+                >
+                  Export Data for Doctor
+                </button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
-      {userRole === 'parent' && <ShravanBot />}
+      <ShravanBot />
     </div>
   );
 }
