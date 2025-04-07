@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import VitalCard from '@/components/VitalCard';
@@ -19,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import ShravanBot from '@/components/ShravanBot';
+import { Heart, Thermometer, Gauge, Droplets, Weight } from 'lucide-react';
 
 // Vital data types
 interface VitalReading {
@@ -197,7 +197,7 @@ export default function VitalsTracker() {
     });
   };
 
-  // Only fixing the bug related to property 'name'
+  // Get metric display name
   const getMetricDisplayName = (metric: keyof PatientVitals): string => {
     const displayNames: Record<keyof PatientVitals, string> = {
       heartRate: 'Heart Rate',
@@ -209,22 +209,57 @@ export default function VitalsTracker() {
     return displayNames[metric];
   };
 
+  // Get icon for vital type
+  const getVitalIcon = (vitalType: keyof PatientVitals) => {
+    switch(vitalType) {
+      case 'heartRate':
+        return <Heart className="h-4 w-4 text-white" />;
+      case 'bloodPressure':
+        return <Gauge className="h-4 w-4 text-white" />;
+      case 'bloodSugar':
+        return <Droplets className="h-4 w-4 text-white" />;
+      case 'bodyTemperature':
+        return <Thermometer className="h-4 w-4 text-white" />;
+      case 'weight':
+        return <Weight className="h-4 w-4 text-white" />;
+    }
+  };
+
+  // Get status for vital value
+  const getVitalStatus = (value: number, normalRange: {min: number, max: number}): 'normal' | 'warning' | 'critical' => {
+    if (value < normalRange.min || value > normalRange.max) {
+      // Simple logic: if more than 10% outside range, it's critical
+      const minDiff = normalRange.min - value;
+      const maxDiff = value - normalRange.max;
+      const threshold = (normalRange.max - normalRange.min) * 0.1;
+      
+      if ((minDiff > 0 && minDiff > threshold) || (maxDiff > 0 && maxDiff > threshold)) {
+        return 'critical';
+      }
+      return 'warning';
+    }
+    return 'normal';
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Vitals Tracker</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        {Object.entries(patientData).map(([key, data]) => (
-          <VitalCard 
-            key={key}
-            title={getMetricDisplayName(key as keyof PatientVitals)}
-            value={data.value}
-            unit={data.unit}
-            status={data.value < data.normalRange.min || data.value > data.normalRange.max ? 'warning' : 'normal'}
-            onClick={() => setSelectedMetric(key as keyof PatientVitals)}
-            isSelected={selectedMetric === key}
-          />
-        ))}
+        {Object.entries(patientData).map(([key, data]) => {
+          const vitalKey = key as keyof PatientVitals;
+          return (
+            <VitalCard 
+              key={key}
+              title={getMetricDisplayName(vitalKey)}
+              value={data.value}
+              unit={data.unit}
+              status={getVitalStatus(data.value, data.normalRange)}
+              onClick={() => setSelectedMetric(vitalKey)}
+              isSelected={selectedMetric === key}
+            />
+          );
+        })}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
