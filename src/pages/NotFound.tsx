@@ -1,27 +1,27 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 
-const NotFound = () => {
-  const location = useLocation();
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
-
+export default function NotFound() {
+  const navigate = useNavigate();
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-shravan-mint/20 via-white to-shravan-lavender/20 p-4">
+      <div className="w-24 h-24 rounded-full bg-shravan-mint flex items-center justify-center mb-6 animate-float">
+        <span className="text-4xl">🔍</span>
       </div>
+      
+      <h1 className="text-4xl font-bold mb-4">404</h1>
+      <p className="text-xl text-muted-foreground mb-8 text-center max-w-md">
+        Oops! We couldn't find the page you're looking for.
+      </p>
+      
+      <Button 
+        onClick={() => navigate('/')} 
+        className="btn-shravan btn-primary"
+      >
+        Return to Home
+      </Button>
     </div>
   );
-};
-
-export default NotFound;
+}
