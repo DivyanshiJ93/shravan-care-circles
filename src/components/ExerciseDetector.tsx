@@ -17,7 +17,6 @@ interface ExerciseDetectorProps {
 const exerciseConfigs = {
   handsUp: {
     description: "Raise both hands above your head, then lower them slowly.",
-    animationSrc: "/animations/hands-up.gif",
     detectPose: (keypoints: poseDetection.Keypoint[]) => {
       if (!keypoints || keypoints.length < 1) return { isCorrect: false, feedback: "No pose detected" };
       
@@ -66,7 +65,6 @@ const exerciseConfigs = {
   },
   handsCurl: {
     description: "With your arms extended, slowly curl your hands towards your shoulders and back.",
-    animationSrc: "/animations/hands-curl.gif",
     detectPose: (keypoints: poseDetection.Keypoint[]) => {
       if (!keypoints || keypoints.length < 1) return { isCorrect: false, feedback: "No pose detected" };
       
@@ -122,7 +120,6 @@ const exerciseConfigs = {
   },
   sitAndReach: {
     description: "Sitting down, lean forward and try to reach your toes, then return to sitting position.",
-    animationSrc: "/animations/sit-reach.gif",
     detectPose: (keypoints: poseDetection.Keypoint[]) => {
       if (!keypoints || keypoints.length < 1) return { isCorrect: false, feedback: "No pose detected" };
       
@@ -191,33 +188,25 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
   const [feedback, setFeedback] = useState<string | null>(null);
   const [detector, setDetector] = useState<poseDetection.PoseDetector | null>(null);
   const [lastPose, setLastPose] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   
-  // Initialize TensorFlow and pose detector
+  // Initialize pose detector
   useEffect(() => {
     const initializeDetector = async () => {
       if (!detector) {
         try {
-          setIsLoading(true);
           await tf.ready();
-          console.log("TensorFlow backend initialized:", tf.getBackend());
-          
           const model = poseDetection.SupportedModels.MoveNet;
-          const newDetector = await poseDetection.createDetector(model, {
+          const detector = await poseDetection.createDetector(model, {
             modelType: 'lightning',
             enableSmoothing: true
           });
-          
-          setDetector(newDetector);
-          setIsLoading(false);
-          console.log("Pose detector initialized successfully");
+          setDetector(detector);
         } catch (error) {
           console.error('Error initializing pose detector:', error);
-          setIsLoading(false);
           toast({
             title: "Initialization Error",
             description: "Could not initialize pose detection. Please try again.",
@@ -234,7 +223,7 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
     return () => {
       // Cleanup function
       if (detector) {
-        // No explicit detector cleanup needed for MoveNet
+        // No explicit detector cleanup needed
       }
     };
   }, [isWebcamOn, detector, toast]);
@@ -259,12 +248,6 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
       if (!detector || !videoRef.current || !canvasRef.current || !isWebcamOn) return;
       
       try {
-        // Ensure video is ready
-        if (videoRef.current.readyState < 2) {
-          animationFrameId = requestAnimationFrame(detectPose);
-          return;
-        }
-        
         const poses = await detector.estimatePoses(videoRef.current);
         
         // Draw pose on canvas
@@ -272,13 +255,7 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
           const ctx = canvasRef.current.getContext('2d');
           
           if (ctx) {
-            // Clear previous frame
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            
-            // Mirror the canvas to match video
-            ctx.save();
-            ctx.translate(canvasRef.current.width, 0);
-            ctx.scale(-1, 1);
             
             // Draw connection lines
             ctx.strokeStyle = '#8ECDA0';
@@ -341,9 +318,6 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
                 ctx.stroke();
               }
             });
-            
-            // Restore canvas context
-            ctx.restore();
           }
         }
       } catch (error) {
@@ -353,7 +327,7 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
       animationFrameId = requestAnimationFrame(detectPose);
     };
     
-    if (isWebcamOn && detector && !isLoading) {
+    if (isWebcamOn && detector) {
       detectPose();
     }
     
@@ -362,7 +336,7 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isWebcamOn, detector, exerciseType, feedback, lastPose, repCount, toast, isLoading]);
+  }, [isWebcamOn, detector, exerciseType, feedback, lastPose, repCount, toast]);
   
   const toggleWebcam = async () => {
     if (isWebcamOn) {
@@ -390,20 +364,12 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          
-          // Set canvas dimensions when video metadata is loaded
           videoRef.current.onloadedmetadata = () => {
-            if (videoRef.current && canvasRef.current) {
-              canvasRef.current.width = videoRef.current.videoWidth;
-              canvasRef.current.height = videoRef.current.videoHeight;
-              console.log("Video dimensions:", canvasRef.current.width, "x", canvasRef.current.height);
+            if (canvasRef.current) {
+              canvasRef.current.width = videoRef.current!.videoWidth;
+              canvasRef.current.height = videoRef.current!.videoHeight;
             }
           };
-          
-          // Ensure video is playing
-          videoRef.current.play().catch(e => {
-            console.error("Error playing video:", e);
-          });
         }
         
         setIsWebcamOn(true);
@@ -423,103 +389,71 @@ export default function ExerciseDetector({ exerciseType }: ExerciseDetectorProps
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
-      <div className="w-full md:w-2/3 flex flex-col items-center">
-        <h3 className="text-2xl font-bold mb-4">
-          {exerciseType === 'handsUp' && "Hands Up Exercise"}
-          {exerciseType === 'handsCurl' && "Hands Curl Exercise"}
-          {exerciseType === 'sitAndReach' && "Sit and Reach Exercise"}
-        </h3>
-        
-        <p className="text-muted-foreground mb-6">{exerciseConfigs[exerciseType].description}</p>
-        
-        <div className="relative w-full max-w-md aspect-video bg-muted rounded-xl overflow-hidden mb-4">
-          {isWebcamOn ? (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover transform scale-x-[-1]"
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full"
-              />
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-                  <div className="animate-pulse flex flex-col items-center">
-                    <Activity className="h-8 w-8 mb-2" />
-                    <span>Initializing...</span>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Video className="h-16 w-16 text-muted-foreground/50" />
-            </div>
-          )}
-          
-          {isWebcamOn && !isLoading && (
-            <div className="absolute top-3 right-3 bg-shravan-mint text-primary-foreground font-bold rounded-full px-3 py-1 flex items-center gap-1">
-              <Activity className="h-4 w-4" />
-              <span>Reps: {repCount}</span>
-            </div>
-          )}
-        </div>
-        
-        {feedback && (
-          <div className={`mb-4 p-3 rounded-lg ${feedback.includes('Great') || feedback.includes('Good') ? 'bg-shravan-mint text-primary-foreground' : 'bg-shravan-peach text-secondary-foreground'} flex items-center gap-2`}>
-            {feedback.includes('Great') || feedback.includes('Good') ? (
-              <Check className="h-5 w-5" />
-            ) : (
-              <X className="h-5 w-5" />
-            )}
-            <span>{feedback}</span>
+    <div className="card-shravan flex flex-col items-center">
+      <h3 className="text-2xl font-bold mb-4">
+        {exerciseType === 'handsUp' && "Hands Up Exercise"}
+        {exerciseType === 'handsCurl' && "Hands Curl Exercise"}
+        {exerciseType === 'sitAndReach' && "Sit and Reach Exercise"}
+      </h3>
+      
+      <p className="text-muted-foreground mb-6">{exerciseConfigs[exerciseType].description}</p>
+      
+      <div className="relative w-full max-w-md aspect-video bg-muted rounded-xl overflow-hidden mb-4">
+        {isWebcamOn ? (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 w-full h-full"
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Video className="h-16 w-16 text-muted-foreground/50" />
           </div>
         )}
         
-        <Button 
-          onClick={toggleWebcam} 
-          className={`btn-shravan ${isWebcamOn ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'btn-primary'}`}
-          disabled={isLoading}
-        >
-          {isWebcamOn ? (
-            <>
-              <VideoOff className="mr-2 h-5 w-5" />
-              Stop Camera
-            </>
-          ) : (
-            <>
-              <Video className="mr-2 h-5 w-5" />
-              Start Camera
-            </>
-          )}
-        </Button>
+        {isWebcamOn && (
+          <div className="absolute top-3 right-3 bg-shravan-mint text-primary-foreground font-bold rounded-full px-3 py-1 flex items-center gap-1">
+            <Activity className="h-4 w-4" />
+            <span>Reps: {repCount}</span>
+          </div>
+        )}
       </div>
       
-      {/* Exercise animation guide */}
-      <div className="w-full md:w-1/3 flex flex-col items-center">
-        <div className="bg-muted p-4 rounded-xl">
-          <h4 className="text-lg font-bold mb-2">Exercise Guide</h4>
-          <div className="rounded-lg overflow-hidden border border-muted-foreground/20 aspect-square w-full max-w-[200px] mx-auto mb-3">
-            <img 
-              src={exerciseConfigs[exerciseType].animationSrc} 
-              alt={`${exerciseType} exercise animation`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder.svg';
-              }}
-            />
-          </div>
-          <div className="text-sm text-muted-foreground text-center">
-            Follow this animation to perform the exercise correctly
-          </div>
+      {feedback && (
+        <div className={`mb-4 p-3 rounded-lg ${feedback.includes('Great') || feedback.includes('Good') ? 'bg-shravan-mint text-primary-foreground' : 'bg-shravan-peach text-secondary-foreground'} flex items-center gap-2`}>
+          {feedback.includes('Great') || feedback.includes('Good') ? (
+            <Check className="h-5 w-5" />
+          ) : (
+            <X className="h-5 w-5" />
+          )}
+          <span>{feedback}</span>
         </div>
-      </div>
+      )}
+      
+      <Button 
+        onClick={toggleWebcam} 
+        className={`btn-shravan ${isWebcamOn ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'btn-primary'}`}
+      >
+        {isWebcamOn ? (
+          <>
+            <VideoOff className="mr-2 h-5 w-5" />
+            Stop Camera
+          </>
+        ) : (
+          <>
+            <Video className="mr-2 h-5 w-5" />
+            Start Camera
+          </>
+        )}
+      </Button>
     </div>
   );
 }

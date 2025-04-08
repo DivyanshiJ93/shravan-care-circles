@@ -7,25 +7,17 @@ import ShravanBot from '@/components/ShravanBot';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExerciseDetector from '@/components/ExerciseDetector';
-import { useToast } from '@/hooks/use-toast';
 
 export default function PhysioAssistant() {
   const { user, isAuthenticated, userRole } = useUser();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('handsUp');
-  const { toast } = useToast();
   
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
     }
-
-    // Display helpful toast on component mount
-    toast({
-      title: "Welcome to Virtual Physiotherapy",
-      description: "Turn on your camera to start the guided exercises with real-time feedback.",
-    });
-  }, [isAuthenticated, navigate, toast]);
+  }, [isAuthenticated, navigate]);
   
   if (!isAuthenticated) {
     return null;
@@ -79,21 +71,17 @@ export default function PhysioAssistant() {
             <TabsTrigger value="sitAndReach">Sit & Reach</TabsTrigger>
           </TabsList>
           
-          <Card>
-            <CardContent className="p-6">
-              <TabsContent value="handsUp" className="mt-0">
-                <ExerciseDetector exerciseType="handsUp" />
-              </TabsContent>
-              
-              <TabsContent value="handsCurl" className="mt-0">
-                <ExerciseDetector exerciseType="handsCurl" />
-              </TabsContent>
-              
-              <TabsContent value="sitAndReach" className="mt-0">
-                <ExerciseDetector exerciseType="sitAndReach" />
-              </TabsContent>
-            </CardContent>
-          </Card>
+          <TabsContent value="handsUp">
+            <ExerciseDetector exerciseType="handsUp" />
+          </TabsContent>
+          
+          <TabsContent value="handsCurl">
+            <ExerciseDetector exerciseType="handsCurl" />
+          </TabsContent>
+          
+          <TabsContent value="sitAndReach">
+            <ExerciseDetector exerciseType="sitAndReach" />
+          </TabsContent>
         </Tabs>
         
         <div className="mt-8">
