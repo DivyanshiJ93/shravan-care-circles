@@ -1,34 +1,25 @@
-
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { CalendarCheck, Heart, Trophy, Thermometer, Gauge } from 'lucide-react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import ShravanBot from '@/components/ShravanBot';
-import VitalCard from '@/components/VitalCard';
+import Header from '@/components/Header';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Activity, Heart, BarChart3 } from 'lucide-react';
 
 export default function KidsDashboard() {
+  const { user, isAuthenticated } = useUser();
   const navigate = useNavigate();
-  const { userName } = useUser();
-
-  const getVitalStatus = (value: number, normalRange: {min: number, max: number}): 'normal' | 'warning' | 'critical' => {
-    if (value < normalRange.min || value > normalRange.max) {
-      // Simple logic: if more than 10% outside range, it's critical
-      const minDiff = normalRange.min - value;
-      const maxDiff = value - normalRange.max;
-      const threshold = (normalRange.max - normalRange.min) * 0.1;
-      
-      if ((minDiff > 0 && minDiff > threshold) || (maxDiff > 0 && maxDiff > threshold)) {
-        return 'critical';
-      }
-      return 'warning';
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/');
     }
-    return 'normal';
-  };
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
