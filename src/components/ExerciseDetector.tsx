@@ -5,6 +5,7 @@ import { Check, X, Video, VideoOff, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import '@tensorflow/tfjs-backend-webgl';
+import * as tf from '@tensorflow/tfjs-core';
 
 type ExerciseType = 'handsUp' | 'handsCurl' | 'sitAndReach';
 

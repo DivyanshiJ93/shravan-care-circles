@@ -1,7 +1,7 @@
 
 export interface VitalCardProps {
   title: string;
-  value: number;
+  value: number | null;
   unit: string;
   status: 'normal' | 'warning' | 'critical';
   onClick: () => void;

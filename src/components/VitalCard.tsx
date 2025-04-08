@@ -9,8 +9,11 @@ interface VitalCardProps {
   title: string;
   value: number | null;
   unit: string;
-  normalRange: { min: number; max: number };
-  icon: React.ReactNode;
+  status: 'normal' | 'warning' | 'critical';
+  onClick: () => void;
+  isSelected?: boolean;
+  normalRange?: { min: number; max: number };
+  icon?: React.ReactNode;
   history?: { date: string; value: number }[];
   onUpdate?: (value: number) => void;
   editable?: boolean;
@@ -20,7 +23,10 @@ export default function VitalCard({
   title,
   value,
   unit,
-  normalRange,
+  status = 'normal',
+  onClick,
+  isSelected,
+  normalRange = { min: 0, max: 100 },
   icon,
   history = [],
   onUpdate,
@@ -38,26 +44,30 @@ export default function VitalCard({
     setIsEditing(false);
   };
 
-  const isNormal = (val: number) => {
-    return val >= normalRange.min && val <= normalRange.max;
-  };
-
-  const getStatusColor = (val: number) => {
-    if (isNormal(val)) {
+  const getStatusColor = (statusValue: string) => {
+    if (statusValue === 'normal') {
       return 'bg-shravan-mint text-primary-foreground';
+    } else if (statusValue === 'warning') {
+      return 'bg-shravan-peach text-secondary-foreground';
+    } else if (statusValue === 'critical') {
+      return 'bg-red-500 text-white';
     }
-    return 'bg-shravan-peach text-secondary-foreground';
+    return 'bg-shravan-mint text-primary-foreground';
   };
 
-  const getStatusIcon = (val: number) => {
-    if (isNormal(val)) {
+  const getStatusIcon = (statusValue: string) => {
+    if (statusValue === 'normal') {
       return <Check className="h-4 w-4" />;
     }
     return <AlertTriangle className="h-4 w-4" />;
   };
 
+  const isNormal = (val: number) => {
+    return normalRange ? (val >= normalRange.min && val <= normalRange.max) : true;
+  };
+
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden ${isSelected ? 'ring-2 ring-shravan-blue' : ''}`}>
       <CardHeader className="bg-muted/50 flex flex-row items-center justify-between py-4">
         <CardTitle className="text-lg flex items-center gap-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center bg-shravan-blue">
@@ -112,9 +122,13 @@ export default function VitalCard({
                 <div className="text-3xl font-bold">
                   {value} <span className="text-sm text-muted-foreground">{unit}</span>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${getStatusColor(value)}`}>
-                  {getStatusIcon(value)}
-                  {isNormal(value) ? 'Normal' : 'Abnormal'}
+                <div 
+                  className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${getStatusColor(status)}`}
+                  onClick={onClick}
+                  role="button"
+                >
+                  {getStatusIcon(status)}
+                  {status === 'normal' ? 'Normal' : status === 'warning' ? 'Warning' : 'Critical'}
                 </div>
               </div>
             ) : (

@@ -257,6 +257,9 @@ export default function VitalsTracker() {
               status={getVitalStatus(data.value, data.normalRange)}
               onClick={() => setSelectedMetric(vitalKey)}
               isSelected={selectedMetric === key}
+              normalRange={data.normalRange}
+              icon={getVitalIcon(vitalKey)}
+              history={data.history}
             />
           );
         })}
