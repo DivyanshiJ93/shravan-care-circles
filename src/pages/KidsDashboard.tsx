@@ -1,262 +1,212 @@
 
-import { useEffect } from 'react';
+import React from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { CalendarCheck, Heart, Trophy, Thermometer, Gauge } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import Header from '@/components/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Heart, Activity, Brain, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
+import ShravanBot from '@/components/ShravanBot';
 import VitalCard from '@/components/VitalCard';
 
-// Mock data
-const mockParentInfo = {
-  name: "Raj Sharma",
-  age: 68,
-  lastActive: "2 hours ago",
-  vitals: {
-    heartRate: {
-      value: 72,
-      unit: 'bpm',
-      normalRange: { min: 60, max: 100 },
-      history: [
-        { date: 'Apr 6, 2025', value: 75 },
-        { date: 'Apr 5, 2025', value: 72 },
-        { date: 'Apr 4, 2025', value: 78 },
-      ]
-    },
-    bloodPressure: {
-      value: 138,
-      unit: 'mmHg',
-      normalRange: { min: 90, max: 130 },
-      history: [
-        { date: 'Apr 6, 2025', value: 142 },
-        { date: 'Apr 5, 2025', value: 138 },
-        { date: 'Apr 4, 2025', value: 135 },
-      ]
-    },
-    bloodSugar: {
-      value: 110,
-      unit: 'mg/dL',
-      normalRange: { min: 70, max: 140 },
-      history: [
-        { date: 'Apr 6, 2025', value: 115 },
-        { date: 'Apr 5, 2025', value: 110 },
-        { date: 'Apr 4, 2025', value: 108 },
-      ]
-    }
-  }
-};
-
-const mockAlerts = [
-  {
-    type: "warning",
-    message: "Blood pressure trending high over last 3 days",
-    time: "2 hours ago"
-  },
-  {
-    type: "info",
-    message: "Medication reminder sent and acknowledged",
-    time: "6 hours ago"
-  },
-  {
-    type: "success",
-    message: "Completed all scheduled exercises today",
-    time: "Yesterday"
-  }
-];
-
-const mockMedications = [
-  { name: "Lisinopril", time: "8:00 AM", taken: true },
-  { name: "Metformin", time: "1:00 PM", taken: true },
-  { name: "Atorvastatin", time: "7:00 PM", taken: false }
-];
-
 export default function KidsDashboard() {
-  const { user, isAuthenticated } = useUser();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'kid') {
-      navigate('/kids-login');
-    }
-  }, [isAuthenticated, user, navigate]);
-  
-  if (!isAuthenticated || user?.role !== 'kid') {
-    return null;
-  }
+  const { userName } = useUser();
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case "warning":
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      case "info":
-        return <Bell className="h-4 w-4 text-blue-500" />;
-      case "success":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return <Bell className="h-4 w-4" />;
+  const getVitalStatus = (value: number, normalRange: {min: number, max: number}): 'normal' | 'warning' | 'critical' => {
+    if (value < normalRange.min || value > normalRange.max) {
+      // Simple logic: if more than 10% outside range, it's critical
+      const minDiff = normalRange.min - value;
+      const maxDiff = value - normalRange.max;
+      const threshold = (normalRange.max - normalRange.min) * 0.1;
+      
+      if ((minDiff > 0 && minDiff > threshold) || (maxDiff > 0 && maxDiff > threshold)) {
+        return 'critical';
+      }
+      return 'warning';
     }
+    return 'normal';
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container px-4 md:px-6 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 border-2 border-shravan-mint">
+            <AvatarImage src="https://api.dicebear.com/7.x/adventurer/svg?seed=Felix" />
+            <AvatarFallback>FD</AvatarFallback>
+          </Avatar>
           <div>
-            <h1 className="text-3xl font-bold">Caregiver Dashboard</h1>
-            <p className="text-muted-foreground">Monitoring {mockParentInfo.name}'s health</p>
+            <h1 className="text-2xl font-bold">Welcome back, {userName || 'Felix'}!</h1>
+            <p className="text-muted-foreground">Let's check how you're doing today</p>
           </div>
-          
-          <Card className="w-full md:w-auto">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-shravan-mint flex items-center justify-center">
-                <span className="text-xl">👴🏼</span>
-              </div>
-              <div>
-                <p className="font-medium">{mockParentInfo.name}, {mockParentInfo.age}</p>
-                <p className="text-sm text-muted-foreground">Last active: {mockParentInfo.lastActive}</p>
-              </div>
-              <Button onClick={() => navigate('/video-call')} size="sm" className="bg-shravan-blue hover:bg-shravan-darkBlue">
-                Call Now
-              </Button>
-            </CardContent>
-          </Card>
         </div>
-        
-        {/* Vitals Section */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Current Vitals</h2>
-            <Button onClick={() => navigate('/vitals-tracker')} variant="outline">History</Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <VitalCard
-              title="Heart Rate"
-              value={mockParentInfo.vitals.heartRate.value}
-              unit={mockParentInfo.vitals.heartRate.unit}
-              normalRange={mockParentInfo.vitals.heartRate.normalRange}
-              icon={<Heart className="h-4 w-4 text-shravan-blue" />}
-              history={mockParentInfo.vitals.heartRate.history}
-              editable={false}
-            />
-            
-            <VitalCard
-              title="Blood Pressure"
-              value={mockParentInfo.vitals.bloodPressure.value}
-              unit={mockParentInfo.vitals.bloodPressure.unit}
-              normalRange={mockParentInfo.vitals.bloodPressure.normalRange}
-              icon={<Activity className="h-4 w-4 text-shravan-blue" />}
-              history={mockParentInfo.vitals.bloodPressure.history}
-              editable={false}
-            />
-            
-            <VitalCard
-              title="Blood Sugar"
-              value={mockParentInfo.vitals.bloodSugar.value}
-              unit={mockParentInfo.vitals.bloodSugar.unit}
-              normalRange={mockParentInfo.vitals.bloodSugar.normalRange}
-              icon={<Brain className="h-4 w-4 text-shravan-blue" />}
-              history={mockParentInfo.vitals.bloodSugar.history}
-              editable={false}
-            />
-          </div>
-        </section>
-        
-        {/* Alerts & Medications Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Alerts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Alerts</CardTitle>
-              <CardDescription>Important notifications about {mockParentInfo.name}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockAlerts.map((alert, i) => (
-                  <div key={i} className="flex items-start justify-between p-3 border rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        {getAlertIcon(alert.type)}
-                      </div>
-                      <div>
-                        <p className="font-medium">{alert.message}</p>
-                        <p className="text-sm text-muted-foreground">{alert.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full">View All Alerts</Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Medications */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Medication Tracker</CardTitle>
-              <CardDescription>Today's medications for {mockParentInfo.name}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockMedications.map((med, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${med.taken ? 'bg-green-500' : 'bg-amber-500'}`}></div>
-                      <span>{med.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{med.time}</span>
-                      <div className={`px-2 py-0.5 rounded text-xs ${med.taken ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                        {med.taken ? 'Taken' : 'Due'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full">Set Reminders</Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/physio-assistant')}
+            className="bg-white dark:bg-background"
+          >
+            Physio Session
+          </Button>
+          <Button 
+            onClick={() => navigate('/vitals-tracker')}
+            className="bg-shravan-mint hover:bg-shravan-darkMint text-foreground"
+          >
+            Track Vitals
+          </Button>
         </div>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="activities">Activities</TabsTrigger>
+          <TabsTrigger value="achievements">Achievements</TabsTrigger>
+        </TabsList>
         
-        {/* Quick Actions */}
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <Button 
-              onClick={() => navigate('/video-call')}
-              className="h-auto flex flex-col items-center justify-center gap-2 p-6 bg-shravan-blue text-white hover:bg-shravan-darkBlue"
-            >
-              Start Video Call
-            </Button>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Your Daily Goal</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">3/5 exercises</span>
+                  </div>
+                  <Progress value={60} className="h-2" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={() => navigate('/physio-assistant')} 
+                  className="w-full bg-shravan-mint hover:bg-shravan-darkMint text-foreground"
+                >
+                  Complete Today's Exercises
+                </Button>
+              </CardFooter>
+            </Card>
             
-            <Button 
-              onClick={() => navigate('/send-reminder')}
-              className="h-auto flex flex-col items-center justify-center gap-2 p-6 bg-shravan-peach text-secondary-foreground hover:bg-shravan-darkPeach"
-            >
-              Send Reminder
-            </Button>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Next Appointment</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-shravan-blue/20 p-3 rounded-full">
+                    <CalendarCheck className="h-6 w-6 text-shravan-blue" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Dr. Sarah Johnson</p>
+                    <p className="text-muted-foreground text-sm">Physiotherapist</p>
+                  </div>
+                </div>
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="font-medium">Thursday, 11 April 2024</p>
+                  <p className="text-muted-foreground">10:30 AM - 11:15 AM</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">View Details</Button>
+              </CardFooter>
+            </Card>
             
-            <Button 
-              onClick={() => navigate('/emergency-contacts')}
-              className="h-auto flex flex-col items-center justify-center gap-2 p-6 bg-shravan-mint text-primary-foreground hover:bg-shravan-darkMint"
-            >
-              Emergency Contacts
-            </Button>
+            <Card className="xl:col-span-1 md:col-span-2 xl:col-start-3 xl:row-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Achievements</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 bg-shravan-mint/20 p-3 rounded-lg">
+                  <div className="bg-shravan-mint rounded-full p-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Exercise Streak</p>
+                    <p className="text-muted-foreground text-sm">5 days in a row!</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-shravan-peach/20 p-3 rounded-lg">
+                  <div className="bg-shravan-peach rounded-full p-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Range Improvement</p>
+                    <p className="text-muted-foreground text-sm">15% better flexibility</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <Button 
-              onClick={() => navigate('/care-settings')}
-              variant="outline"
-              className="h-auto flex flex-col items-center justify-center gap-2 p-6"
-            >
-              Care Settings
-            </Button>
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <VitalCard 
+                title="Heart Rate"
+                value={75}
+                unit="bpm"
+                status={getVitalStatus(75, {min: 60, max: 100})}
+                onClick={() => navigate('/vitals-tracker')}
+                normalRange={{ min: 60, max: 100 }}
+                icon={<Heart className="h-4 w-4 text-white" />}
+                history={[
+                  { date: '2024-03-09', value: 76 },
+                  { date: '2024-03-10', value: 75 },
+                ]}
+                editable={false}
+              />
+              
+              <VitalCard 
+                title="Blood Pressure"
+                value={120}
+                unit="mmHg"
+                status={getVitalStatus(120, {min: 90, max: 140})}
+                onClick={() => navigate('/vitals-tracker')}
+                normalRange={{ min: 90, max: 140 }}
+                icon={<Gauge className="h-4 w-4 text-white" />}
+                history={[
+                  { date: '2024-03-09', value: 118 },
+                  { date: '2024-03-10', value: 120 },
+                ]}
+                editable={false}
+              />
+              
+              <VitalCard 
+                title="Temperature"
+                value={37.2}
+                unit="°C"
+                status={getVitalStatus(37.2, {min: 36.1, max: 37.5})}
+                onClick={() => navigate('/vitals-tracker')}
+                normalRange={{ min: 36.1, max: 37.5 }}
+                icon={<Thermometer className="h-4 w-4 text-white" />}
+                history={[
+                  { date: '2024-03-09', value: 37.0 },
+                  { date: '2024-03-10', value: 37.2 },
+                ]}
+                editable={false}
+              />
+            </div>
           </div>
-        </section>
-      </main>
+        </TabsContent>
+        
+        <TabsContent value="activities">
+          <div className="p-8 text-center">
+            <h3 className="text-lg font-medium">Activities coming soon!</h3>
+            <p className="text-muted-foreground">Check back later for your activity tracking.</p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="achievements">
+          <div className="p-8 text-center">
+            <h3 className="text-lg font-medium">Achievements collection coming soon!</h3>
+            <p className="text-muted-foreground">Your achievements will be displayed here.</p>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      <ShravanBot />
     </div>
   );
 }
